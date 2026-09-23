@@ -60,7 +60,8 @@ h1 { margin-top: 11px; font-size: clamp(2rem, 3vw, 2.8rem); letter-spacing: -1.8
 .folder-card-copy span { color: var(--muted); font-size: .82rem; }
 .folder-card-actions { position: absolute; top: 12px; right: 12px; }
 .folder-menu-button { width: 34px; height: 34px; }
-.folder-menu { position: absolute; z-index: 2; top: 38px; right: 0; width: 145px; padding: 5px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); box-shadow: 0 10px 25px rgba(25, 48, 47, .12); }
+.folder-menu { position: absolute; z-index: 2; top: 38px; right: 0; width: 145px; max-width: calc(100vw - 24px); padding: 5px; border: 1px solid var(--line); border-radius: 7px; background: var(--paper); box-shadow: 0 10px 25px rgba(25, 48, 47, .12); }
+.folder-menu-up { top: auto; bottom: 38px; }
 .folder-menu button { width: 100%; min-height: 35px; display: flex; align-items: center; gap: 9px; padding: 0 9px; border: 0; border-radius: 5px; color: var(--ink); background: transparent; font-size: .82rem; text-align: left; }
 .folder-menu button:hover { background: var(--green-soft); }
 .folder-menu-danger { color: #a33e38 !important; }
@@ -100,6 +101,7 @@ h1 { margin-top: 11px; font-size: clamp(2rem, 3vw, 2.8rem); letter-spacing: -1.8
 .delete-dialog > p { margin-top: 10px; color: var(--muted); font-size: .88rem; line-height: 1.5; }
 .delete-dialog .modal-actions { justify-content: center; }
 .folder-view { padding-top: 18px; }
+.folder-pdfs-heading { margin-top: 30px; margin-bottom: 17px; color: var(--ink); font-family: 'Manrope', sans-serif; font-size: 1.1rem; letter-spacing: -.3px; text-align: center; }
 .back-link { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; color: var(--blue); background: transparent; font-size: .86rem; font-weight: 700; }
 .back-link:hover { color: var(--green-dark); }
 .back-link:focus-visible { outline: 3px solid rgba(34, 114, 138, .3); outline-offset: 3px; }
@@ -177,6 +179,17 @@ h1 { margin-top: 11px; font-size: clamp(2rem, 3vw, 2.8rem); letter-spacing: -1.8
 .reader-error { align-content: center; gap: 18px; text-align: center; }
 .reader-error h2 { font-size: 1.25rem; }
 
+.home-dashboard { display: flex; flex-direction: column; gap: 46px; padding-top: 8px; padding-bottom: 20px; }
+.home-heading { padding-bottom: 8px; }
+.home-heading h1 { margin-top: 11px; font-size: clamp(2rem, 3vw, 2.8rem); letter-spacing: -1.8px; }
+.home-section .section-heading h2 { font-size: 1.1rem; letter-spacing: -.3px; }
+.home-inline-empty { padding: 20px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--paper); font-size: .88rem; text-align: center; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat-tile { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.stat-tile-icon { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 38px; color: var(--green); border-radius: 8px; background: var(--green-soft); }
+.stat-tile strong { display: block; overflow: hidden; color: var(--ink); font-family: 'Manrope', sans-serif; font-size: 1.3rem; letter-spacing: -.5px; text-overflow: ellipsis; white-space: nowrap; }
+.stat-tile span { color: var(--muted); font-size: .78rem; }
+
 @media (max-width: 760px) {
   .app-shell { display: block; }
   .mobile-header { min-height: 74px; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--paper); }
@@ -191,6 +204,8 @@ h1 { margin-top: 11px; font-size: clamp(2rem, 3vw, 2.8rem); letter-spacing: -1.8
   .content-wrap { min-height: calc(100svh - 171px); }
   .folder-section { padding-top: 28px; }
   .folder-grid { grid-template-columns: 1fr; }
+  .home-dashboard { gap: 34px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .folder-view { padding-top: 0; }
   .folder-empty-state { margin-top: 80px; }
   .pdf-list-section { margin-top: 34px; }

@@ -16,9 +16,11 @@ import { EmptyState } from './components/EmptyState'
 import { ErrorToast } from './components/ErrorToast'
 import { FolderCard } from './components/FolderCard'
 import { FolderView, type PdfSort } from './components/FolderView'
+import { HomeDashboard } from './components/HomeDashboard'
 import { SuccessToast } from './components/SuccessToast'
+import { getAnnotationCount } from './db/annotationRepository'
 import { createFolder, deleteFolder as removeFolder, DuplicateFolderNameError, getFolders, updateFolder } from './db/folderRepository'
-import { createPdf, deletePdf, DuplicatePdfNameError, InvalidPdfNameError, getPdfsForFolder, renamePdf, updatePdfReadingProgress } from './db/pdfRepository'
+import { createPdf, deletePdf, DuplicatePdfNameError, getAllPdfMetadata, InvalidPdfNameError, getPdfsForFolder, renamePdf, updatePdfReadingProgress } from './db/pdfRepository'
 import { PdfReader } from './components/PdfReader'
 import type { Folder as FolderRecord } from './types/folder'
 import type { PdfRecord } from './types/pdf'
@@ -41,6 +43,9 @@ function App() {
   const [loadedPdfFolderId, setLoadedPdfFolderId] = useState<string | null>(null)
   const [pdfSearch, setPdfSearch] = useState('')
   const [pdfSort, setPdfSort] = useState<PdfSort>('newest')
+  const [homePdfs, setHomePdfs] = useState<PdfRecord[]>([])
+  const [annotationCount, setAnnotationCount] = useState(0)
+  const [isLoadingHome, setIsLoadingHome] = useState(true)
   const toastTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -61,6 +66,27 @@ function App() {
       if (toastTimeoutRef.current !== null) window.clearTimeout(toastTimeoutRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (currentView !== 'home') return
+    let isMounted = true
+    setIsLoadingHome(true)
+    Promise.all([getAllPdfMetadata(), getAnnotationCount()])
+      .then(([allPdfs, count]) => {
+        if (isMounted) {
+          setHomePdfs(allPdfs)
+          setAnnotationCount(count)
+        }
+      })
+      .catch(() => {
+        if (isMounted) setStorageError('Unable to load your library overview.')
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingHome(false)
+      })
+
+    return () => { isMounted = false }
+  }, [currentView])
 
   const showSuccess = (message: string) => {
     if (toastTimeoutRef.current !== null) window.clearTimeout(toastTimeoutRef.current)
@@ -84,6 +110,20 @@ function App() {
     setOpenFolderId(null)
     setOpenPdfId(null)
     setIsNavOpen(false)
+  }
+  const startUploadFromHome = () => {
+    if (folders.length === 0) {
+      openCreateFolder()
+    } else {
+      goToFolders()
+    }
+  }
+  const openFolderById = (folder: FolderRecord) => {
+    setOpenFolderId(folder.id)
+    setOpenPdfId(null)
+    setPdfSearch('')
+    setPdfSort('newest')
+    setCurrentView('folder')
   }
   const handleSaveFolder = async (name: string) => {
     const duplicate = folders.some((folder) => folder.name.toLocaleLowerCase() === name.toLocaleLowerCase() && folder.id !== folderForAction?.id)
@@ -224,9 +264,9 @@ function App() {
 
       <main className={`main-content ${currentView === 'folder' ? 'main-content-folder' : ''} ${currentView === 'reader' ? 'main-content-reader' : ''}`}>
         <div className="content-wrap">
-          {currentView === 'home' && <span className="eyebrow main-label">Personal library</span>}
+          {currentView === 'home' && !isLoadingFolders && folders.length === 0 && <span className="eyebrow main-label">Personal library</span>}
 
-          {currentView === 'reader' && openPdfId ? <PdfReader key={openPdfId} pdfId={openPdfId} folder={folders.find((folder) => folder.id === pdfs.find((pdf) => pdf.id === openPdfId)?.folderId)} onBack={closePdfReader} /> : currentView === 'folder' && openFolder ? <FolderView folder={openFolder} pdfs={pdfs} isLoadingPdfs={loadedPdfFolderId !== openFolder.id} onBack={goToFolders} onUploadPdf={handleUploadPdf} onDeletePdf={handleDeletePdf} onRenamePdf={handleRenamePdf} onOpenPdf={openPdf} onNotifyError={setStorageError} search={pdfSearch} sort={pdfSort} onSearchChange={setPdfSearch} onSortChange={setPdfSort} /> : currentView === 'home' ? <EmptyState icon={<BookOpen size={30} />} eyebrow="A clear place to begin" title="Your PDF library is empty" description="Create a folder for your materials or choose a PDF to get started. Your library will stay on this device." titleId="empty-title" actions={<><button className="button button-primary" type="button" onClick={openCreateFolder}><FolderPlus size={18} aria-hidden="true" /> Create Folder</button><button className="button button-secondary" type="button"><Upload size={18} aria-hidden="true" /> Upload PDF</button></>} /> : isLoadingFolders ? <section className="loading-state" role="status">Loading your folders...</section> : folders.length === 0 ? <EmptyState icon={<Folder size={30} />} eyebrow="Your folders" title="Folders have not been created yet" description="Create a folder to organize your PDFs by subject." titleId="folders-empty-title" actions={<button className="button button-primary" type="button" onClick={openCreateFolder}><FolderPlus size={18} aria-hidden="true" /> Create Folder</button>} /> : <section className="folder-section" aria-labelledby="folders-heading"><div className="section-heading"><div><h1 id="folders-heading">Folders</h1><span>{folders.length} {folders.length === 1 ? 'folder' : 'folders'}</span></div><button className="button button-secondary" type="button" onClick={openCreateFolder}><FolderPlus size={17} aria-hidden="true" /> Create Folder</button></div><div className="folder-grid">{folders.map((folder) => <FolderCard key={folder.id} folder={folder} onOpen={() => { setOpenFolderId(folder.id); setOpenPdfId(null); setPdfSearch(''); setPdfSort('newest'); setCurrentView('folder') }} onRename={() => openRenameFolder(folder)} onDelete={() => setFolderToDelete(folder)} />)}</div></section>}
+          {currentView === 'reader' && openPdfId ? <PdfReader key={openPdfId} pdfId={openPdfId} folder={folders.find((folder) => folder.id === pdfs.find((pdf) => pdf.id === openPdfId)?.folderId)} onBack={closePdfReader} /> : currentView === 'folder' && openFolder ? <FolderView folder={openFolder} pdfs={pdfs} isLoadingPdfs={loadedPdfFolderId !== openFolder.id} onBack={goToFolders} onUploadPdf={handleUploadPdf} onDeletePdf={handleDeletePdf} onRenamePdf={handleRenamePdf} onOpenPdf={openPdf} onNotifyError={setStorageError} search={pdfSearch} sort={pdfSort} onSearchChange={setPdfSearch} onSortChange={setPdfSort} /> : currentView === 'home' ? (isLoadingFolders ? <section className="loading-state" role="status">Loading your library...</section> : folders.length === 0 ? <EmptyState icon={<BookOpen size={30} />} eyebrow="A clear place to begin" title="Your PDF library is empty" description="Create a folder for your materials or choose a PDF to get started. Your library will stay on this device." titleId="empty-title" actions={<><button className="button button-primary" type="button" onClick={openCreateFolder}><FolderPlus size={18} aria-hidden="true" /> Create Folder</button><button className="button button-secondary" type="button" onClick={startUploadFromHome}><Upload size={18} aria-hidden="true" /> Upload PDF</button></>} /> : <HomeDashboard folders={folders} pdfs={homePdfs} annotationCount={annotationCount} isLoading={isLoadingHome} onOpenPdf={openPdf} onOpenFolder={openFolderById} onRenameFolder={openRenameFolder} onDeleteFolder={(folder) => setFolderToDelete(folder)} onGoToFolders={goToFolders} />) : isLoadingFolders ? <section className="loading-state" role="status">Loading your folders...</section> : folders.length === 0 ? <EmptyState icon={<Folder size={30} />} eyebrow="Your folders" title="Folders have not been created yet" description="Create a folder to organize your PDFs by subject." titleId="folders-empty-title" actions={<button className="button button-primary" type="button" onClick={openCreateFolder}><FolderPlus size={18} aria-hidden="true" /> Create Folder</button>} /> : <section className="folder-section" aria-labelledby="folders-heading"><div className="section-heading"><div><h1 id="folders-heading">Folders</h1><span>{folders.length} {folders.length === 1 ? 'folder' : 'folders'}</span></div><button className="button button-secondary" type="button" onClick={openCreateFolder}><FolderPlus size={17} aria-hidden="true" /> Create Folder</button></div><div className="folder-grid">{folders.map((folder) => <FolderCard key={folder.id} folder={folder} onOpen={() => openFolderById(folder)} onRename={() => openRenameFolder(folder)} onDelete={() => setFolderToDelete(folder)} />)}</div></section>}
         </div>
       </main>
 
