@@ -21,7 +21,10 @@ export function FolderView({ folder, pdfs, isLoadingPdfs, onBack, onUploadPdf, o
   const choosePdf = () => inputRef.current?.click()
   return <section className="folder-view" aria-label={folder.name}>
     <button className="back-link" type="button" onClick={onBack}><ArrowLeft size={17} aria-hidden="true" /> Back to My Folders</button>
-    <h2 className="folder-pdfs-heading">PDFs</h2>
+    <div className="folder-content-header">
+      <h2 className="folder-pdfs-heading">PDFs</h2>
+      <button className="button button-secondary folder-header-upload" type="button" onClick={choosePdf} disabled={isSaving}><Upload size={18} aria-hidden="true" /> {isSaving ? 'Saving PDF...' : 'Upload PDF'}</button>
+    </div>
     <input ref={inputRef} className="visually-hidden" type="file" accept="application/pdf,.pdf" onChange={(event) => void handleFileChange(event)} />
     {isLoadingPdfs ? <div className="pdf-loading-state" role="status">Loading PDFs...</div> : pdfs.length === 0 ? <div className="folder-empty-state"><span className="eyebrow">Folder is ready</span><h2>No PDFs in this folder</h2><p>Keep the PDFs for this subject together in one place.</p><button className="button button-secondary" type="button" onClick={choosePdf} disabled={isSaving}><Upload size={18} aria-hidden="true" /> {isSaving ? 'Saving PDF...' : 'Upload PDF'}</button></div> : <div className="pdf-list">{visiblePdfs.map((pdf) => <PdfListItem key={pdf.id} pdf={pdf} onOpen={() => onOpenPdf(pdf.id)} onRename={() => setPdfToRename(pdf)} onDelete={() => setPdfToDelete(pdf)} />)}</div>}
     <RenamePdfModal key={pdfToRename?.id ?? 'closed'} pdf={pdfToRename} onClose={() => setPdfToRename(null)} onRename={async (name) => { if (!pdfToRename) return undefined; const result = await onRenamePdf(pdfToRename, name); if (!result) setPdfToRename(null); return result }} />
